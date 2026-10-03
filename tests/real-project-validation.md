@@ -33,15 +33,13 @@ It was **not** an isolated Codex CLI run and did not independently measure model
 
 ### Figma evidence
 
-- file key: `WnAosCmXUid8NQaYpcFDT0`
-- inspected public node: `7061:87569`
-- the inspected design context includes shared-looking navigation/UI elements and an `unauthorized-modal` frame.
+A connected Soniks profile-design node was inspected. The design context contains shared-looking navigation/UI elements and a modal-like frame.
 
-Figma was used only as optional design/ownership evidence. No Code Connect mapping or Figma asset was created or modified, and Figma identity was not treated as proof of package availability.
+The validation artifact intentionally does not persist the private/connected Figma file identifier. Figma was used only as optional design/ownership evidence. No Code Connect mapping or Figma asset was created or modified, and Figma identity was not treated as proof of package availability.
 
 ## Evidence boundary
 
-The audit deliberately did **not** inventory either repository. It inspected only the surfaces needed for the profile task and the validation questions:
+The audit deliberately did **not** inventory either repository. It inspected only the surfaces needed for the profile task and validation questions:
 
 - consumer `package.json`;
 - design-system `packages/ui/package.json` on `main` and the matching feature branch;
@@ -102,9 +100,7 @@ For the profile feature itself, `ProfileLinksModal` remains a feature compositio
 
 ## Missing contract
 
-`ProfileNewStationButton.tsx` contains the concrete TODO:
-
-> add navigation to station creation when the route appears
+`ProfileNewStationButton.tsx` contains a concrete TODO to add station-creation navigation when the route exists.
 
 The control is rendered with the existing design-system `Button` and is disabled. No route string, action signature, fake success callback, console-only behavior, or placeholder navigation is invented.
 
@@ -122,7 +118,7 @@ The audit preserves the approved UI as far as possible and leaves the unavailabl
 
 The inspected Figma node supports the existence of navigation and modal-like design intent, but the audit did not infer code availability from visual identity.
 
-For example, seeing an `unauthorized-modal` frame is supporting evidence that dialog behavior is a material UI capability; it is **not** evidence that `@sonik-space/ui@0.1.2` exports a dialog. Package/export evidence remains authoritative for consumer availability.
+A modal-like Figma frame is supporting evidence that dialog behavior is a material UI capability; it is **not** evidence that `@sonik-space/ui@0.1.2` exports a dialog. Package/export evidence remains authoritative for consumer availability.
 
 No broad Figma library reconciliation was performed because it was not needed to decide these boundaries.
 
