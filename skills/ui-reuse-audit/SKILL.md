@@ -10,9 +10,9 @@ metadata:
 
 # UI Reuse Audit
 
-Audit material UI reuse and ownership before frontend implementation. Determine what the current consumer can actually reuse, what kind of missing capability remains, and where that capability belongs. Return that boundary to the downstream planning or implementation workflow; do not take over implementation.
+Audit material UI reuse and ownership before frontend implementation. Determine what the current consumer should reuse, what it can actually use now, what kind of gap remains, and where any missing capability belongs. Return that boundary to downstream planning or implementation; do not take over implementation.
 
-The audit owns reuse and ownership classification. It does not own the detailed implementation plan, design-system mutation, Figma editing, Code Connect authoring, or unrelated architecture decisions.
+The audit owns reuse and ownership classification. It does not own the detailed implementation plan, design-system mutation, Figma editing, Code Connect authoring, backend contract design, or unrelated architecture decisions.
 
 ## Activation boundary
 
@@ -32,7 +32,7 @@ Do not activate for:
 - non-UI work;
 - implementation whose reuse and ownership decisions are already explicitly settled and no new material gap appears.
 
-If a task begins as ordinary implementation but exposes an unresolved material reuse or ownership question, audit only that question and then return control to the original workflow.
+If an ordinary implementation task exposes one unresolved material reuse or ownership question, audit only that question and then return control to the original workflow.
 
 ## Keep the audit boundary narrow
 
@@ -40,7 +40,7 @@ The skill may:
 
 - identify material UI capabilities that could change the implementation boundary;
 - determine whether an existing reusable asset, adapter, composition pattern, or shared capability already covers the need;
-- distinguish consumer-available capability from upstream-only capability;
+- distinguish reusable ownership from current consumer availability;
 - classify the ownership of missing UI capability;
 - record version/availability gaps and missing external contracts separately from ownership;
 - consume existing Figma/library/Code Connect evidence when it helps establish identity or ownership;
@@ -60,15 +60,15 @@ Figma, GitHub, network access, and upstream repositories are optional evidence s
 
 ## Classify one primary ownership decision
 
-For each material UI capability in scope, assign exactly one primary ownership decision. Availability and contract state are separate axes and must never be used as extra ownership decisions.
+For each material UI capability in scope, assign exactly one primary decision. Availability and external-contract state are separate axes and must never be used as extra ownership decisions.
 
 | Decision | Use when | Do not use when |
 |---|---|---|
-| `REUSE` | An existing reusable primitive, component, token, icon, shared pattern, or existing adapter already covers the need closely enough to use directly. | The required capability is not actually available to the consumer, or material translation/composition is still required. |
+| `REUSE` | An existing reusable primitive, component, token, icon, shared pattern, or existing adapter owns the needed capability closely enough to use rather than recreate. The capability may still require a package/version alignment before this consumer can use it. | The generic capability does not exist, or a new real integration/composition boundary is the actual missing work. |
 | `ADAPTER` | A reusable primitive exists, but a **new real integration boundary** is needed to translate framework/application concerns such as routing, image/runtime APIs, localization, theme/session context, or another environment-specific contract. | A suitable adapter already exists (that is `REUSE`), or the wrapper would only rename props, restyle, shorten imports, or hide a single call site. |
-| `COMPOSE` | The requested feature/domain UI is an assembly of reusable primitives whose meaning, data flow, and layout belong to the feature or domain rather than to a generic shared primitive. | The missing capability itself is generic and reusable across consumers, or the result is specific to one application with no meaningful shared primitive boundary. |
-| `EXTEND_DESIGN_SYSTEM` | A genuinely reusable, application-independent UI capability is missing and evidence supports shared design-system ownership across multiple consumers or repeated generic use. | The need is only visually similar to other screens, only hypothetical future reuse exists, or the capability contains domain/application behavior. |
-| `APP_SPECIFIC` | The capability is intentionally tied to one application, product surface, or domain policy and should remain local even if it uses shared primitives internally. | The capability has a stable generic contract that belongs in the shared design system, or it is simply a feature-level composition of existing primitives. |
+| `COMPOSE` | The requested feature/domain UI is an assembly of reusable primitives whose meaning, data flow, orchestration, or layout belongs to the feature/domain rather than to a generic shared primitive. | The missing capability itself has a stable application-independent reusable contract, or the requirement is intentionally application-specific behavior rather than a composition boundary. |
+| `EXTEND_DESIGN_SYSTEM` | A genuinely reusable, application-independent UI capability is missing and evidence supports shared design-system ownership across unrelated features or consumers. | The capability already exists upstream but is unavailable only because of a consumer version gap, or the need is merely visually similar, hypothetical future reuse, or domain/application behavior. |
+| `APP_SPECIFIC` | The capability is intentionally tied to one application, product surface, or domain policy and should remain local even if it uses shared primitives internally. | The capability is a generic shared primitive or is better described as feature/domain composition of existing reusable pieces. |
 
 ### Existing adapters are reuse
 
@@ -86,9 +86,9 @@ This order is a priority, not a requirement to inspect every layer. Stop as soon
 
 ### 1. Start from the requested UI and current consumer usage
 
-Identify only the material capabilities that could change what gets built or where it belongs. For each one, search the consumer first for:
+Identify only material capabilities that could change what gets built or where it belongs. For each one, search the consumer first for:
 
-- direct imports from the design-system/UI package;
+- direct imports from design-system/UI packages;
 - imports through local shared UI or adapter modules;
 - existing call sites of likely reusable components, tokens, icons, or patterns;
 - analogous feature implementations that may reveal an existing composition or application boundary.
@@ -140,19 +140,19 @@ A local application component should not be promoted to design-system ownership 
 
 ### 5. Consult upstream only after consumer state is known
 
-Use the upstream design-system repository, latest branch, package registry metadata, release notes, or another authoritative upstream source only when it answers a material question that consumer evidence cannot resolve, such as:
+Use the upstream design-system repository, latest branch, package registry metadata, release notes, or another authoritative upstream source only when it answers a material question consumer evidence cannot resolve, such as:
 
 - whether a missing capability already exists upstream but is not in the consumer's resolved version;
-- whether a consumer package is behind a release that introduced the needed public export;
+- whether a released version introduced the needed public export;
 - whether an apparent local gap is intentionally planned upstream.
 
-Keep upstream state separate from consumer state. A component on upstream `main` or an unreleased branch is not directly reusable by a consumer that cannot import it.
+Keep upstream state separate from consumer state. A component on upstream `main` or an unreleased branch is not `AVAILABLE` to a consumer that cannot import it.
 
-When upstream evidence shows the capability exists beyond the consumer's current usable surface, classify availability as `UPSTREAM_ONLY` or `VERSION_GAP` as appropriate; do not silently convert the ownership decision into `REUSE` unless the consumer can actually use the capability now.
+If upstream evidence clearly shows the existing reusable capability owns the need, keep the ownership decision as `REUSE` while reporting availability as `UPSTREAM_ONLY` or `VERSION_GAP`. Do not recommend recreating or extending the same capability locally merely because the current consumer cannot import it yet.
 
 ## Use Figma as optional ownership evidence
 
-When the task is driven by a Figma design, consume Figma evidence only to answer material reuse/ownership questions. Do not turn the audit into a Figma implementation or reconciliation workflow.
+When the task is driven by Figma, consume Figma evidence only to answer material reuse/ownership questions. Do not turn the audit into a Figma implementation or reconciliation workflow.
 
 Useful evidence can include:
 
@@ -164,22 +164,20 @@ Useful evidence can include:
 
 Treat this evidence according to what it actually proves:
 
-- a Figma library component can establish **design intent** and a likely reusable owner;
+- a Figma library component can establish design intent and a likely reusable owner;
 - a Code Connect mapping can strongly support the intended code counterpart;
 - a variable/style mapping can support reuse of a token or shared visual primitive;
 - none of these alone proves that the current consumer's resolved package exports the required code capability.
 
-Consumer availability must still be verified through the consumer-first workflow. If Figma maps to a code component that exists only upstream, the result remains `UPSTREAM_ONLY` or `VERSION_GAP` rather than `AVAILABLE`.
+Consumer availability must still be verified through the consumer-first workflow. If Figma maps to a code component that exists only upstream, keep the reusable owner and report `UPSTREAM_ONLY` or `VERSION_GAP` rather than `AVAILABLE`.
 
-Do not infer ownership from visual similarity alone. Two visually similar objects can have different domain contracts; conversely, a Figma instance with a different local label can still map to an existing reusable primitive.
-
-If Figma metadata is unavailable, stale, ambiguous, or detached, continue with code/package evidence and record the Figma side as unverified only when that uncertainty materially affects the conclusion.
+Do not infer ownership from visual similarity alone. If Figma metadata is unavailable, stale, ambiguous, or detached, continue with code/package evidence and record the Figma side as unverified only when that uncertainty materially affects the conclusion.
 
 ### Delegate specialized Figma work
 
 This skill may consume existing Figma evidence, but it must not:
 
-- inspect or reproduce the full internal workflow of a Figma design-to-code implementation skill;
+- reproduce a Figma design-to-code implementation workflow;
 - create or repair Code Connect mappings;
 - mutate Figma components, variables, styles, or libraries;
 - reconcile an entire Figma library against a code design system;
@@ -189,7 +187,7 @@ When the audit identifies a need for one of those actions, record the ownership/
 
 ## Resolve ownership gaps without wrapper proliferation
 
-When consumer discovery shows that no directly reusable surface fully covers the requirement, classify the remaining gap by its actual contract, not by convenience or folder structure.
+When consumer discovery shows that no directly usable surface fully covers the requirement, classify the remaining gap by its actual contract, not by convenience or folder structure.
 
 ### Choose `ADAPTER` only for a real integration boundary
 
@@ -218,21 +216,21 @@ Use `EXTEND_DESIGN_SYSTEM` only when the missing capability has a stable applica
 - existing design-system primitives establish a consistent ownership boundary that the new capability naturally extends;
 - the required behavior can be specified without importing application routes, domain services, business state, or product-specific policy.
 
-Do not use `EXTEND_DESIGN_SYSTEM` merely because the element appears in Figma, is visually polished, could hypothetically be reused later, or would make local code shorter.
+Do not use `EXTEND_DESIGN_SYSTEM` merely because the element appears in Figma, is visually polished, could hypothetically be reused later, or would make local code shorter. Do not use it for a capability that already exists in the design system but is blocked only by `UPSTREAM_ONLY` or `VERSION_GAP`; that is still `REUSE` with an availability gap.
 
-For composite widgets such as dialogs, keep generic mechanics in the design-system ownership only when the contract is truly generic. Application orchestration, service calls, routing, analytics policy, domain state, and business-specific content remain outside that primitive.
+For composite widgets such as dialogs, keep generic mechanics in design-system ownership only when the contract is truly generic. Application orchestration, service calls, routing, analytics policy, domain state, and business-specific content remain outside that primitive.
 
 ### Choose `APP_SPECIFIC` for intentional local capability
 
 Use `APP_SPECIFIC` when the capability is coupled to application/domain behavior strongly enough that extracting it would either leak product concepts into the design system or require a generic API invented only to hide local behavior.
 
-It can still reuse tokens, primitives, and adapters. `APP_SPECIFIC` does not mean "build everything from scratch"; it means the owning composition/behavior remains local.
+It can still reuse tokens, primitives, and adapters. `APP_SPECIFIC` does not mean "build everything from scratch"; it means the owning behavior remains local.
 
 ## Prove absence proportionally
 
 A failed search is not proof that a capability is absent.
 
-Before assigning `ABSENT`, inspect a representative set of the surfaces that would reasonably contain the capability, for example:
+Before assigning `ABSENT`, inspect a representative set of surfaces that would reasonably contain the capability, for example:
 
 - likely package exports and secondary entry points;
 - local shared UI/adapter directories;
@@ -252,11 +250,17 @@ Use these availability statuses:
 
 - `AVAILABLE` — evidence shows the current consumer can use the capability through a supported local or dependency surface now;
 - `UPSTREAM_ONLY` — the capability exists in an upstream source but is not part of the consumer's current usable surface and no specific consumer-version delta is established;
-- `VERSION_GAP` — the capability belongs to the dependency/design system and evidence establishes that a different released/resolved version or channel exposes it while the current consumer does not;
+- `VERSION_GAP` — evidence establishes that another released/resolved version or channel exposes the reusable capability while the current consumer does not;
 - `ABSENT` — representative evidence supports that the capability is not present in the relevant reusable surfaces;
 - `UNKNOWN` — available evidence is insufficient to establish one of the above confidently.
 
-A capability can therefore be, for example, `EXTEND_DESIGN_SYSTEM + ABSENT`, or `REUSE + AVAILABLE`. A component that exists only on design-system `main` is not `REUSE + AVAILABLE` for a consumer that cannot import it.
+Examples:
+
+- existing installed button: `REUSE + AVAILABLE`;
+- existing adapter already used by the app: `REUSE + AVAILABLE`;
+- component introduced in a newer published design-system version: `REUSE + VERSION_GAP`;
+- component present only on unreleased design-system `main`: `REUSE + UPSTREAM_ONLY`;
+- genuinely missing generic primitive: `EXTEND_DESIGN_SYSTEM + ABSENT`.
 
 Use `VERSION_GAP` only when the version relationship itself is established. If the capability merely appears in an unreleased or otherwise unversioned upstream state, prefer `UPSTREAM_ONLY`.
 
@@ -271,7 +275,7 @@ For each material capability, retain only the evidence needed to support the own
 - whether Figma/Code Connect identifies an intended reusable counterpart;
 - what upstream evidence, if any, explains a gap.
 
-Do not turn discovery into a repository inventory, dependency audit, design-system catalog, or Figma reconciliation report. The final output should be able to cite the decisive evidence without reproducing every search performed.
+Do not turn discovery into a repository inventory, dependency audit, design-system catalog, or Figma reconciliation report.
 
 ## Handle missing external contracts without inventing them
 
@@ -290,31 +294,87 @@ When a required contract is `MISSING_CONTRACT`:
 3. preserve the approved visual state as far as the established UI contract allows;
 4. record a concrete TODO that names the missing dependency and where downstream implementation must reconnect it once the contract exists;
 5. use a disabled control or another explicitly non-interactive approved state when presenting an active control would falsely imply working behavior;
-6. do not replace the missing action with unrelated local state, placeholder navigation, console logging, a no-op callback, or a guessed temporary contract unless the user/spec explicitly requires such a prototype behavior.
+6. do not replace the missing action with unrelated local state, placeholder navigation, console logging, a no-op callback, or a guessed temporary contract unless the user/spec explicitly requires such prototype behavior.
 
-A disabled control is not mandatory when the approved design already defines another honest unavailable state, or when the control itself should be omitted until the contract exists. The key requirement is that the UI must not represent a false interaction.
+A disabled control is not mandatory when the approved design already defines another honest unavailable state, or when the control itself should be omitted until the contract exists. The UI must not represent a false interaction.
 
-When the contract is `UNKNOWN`, avoid guessing. If ownership can still be decided, finish the audit with the uncertainty recorded. If the unknown contract materially changes UI ownership, leave the affected capability `UNKNOWN` and hand the unresolved decision back to the appropriate planning/product workflow.
+When the contract is `UNKNOWN`, avoid guessing. If ownership can still be decided, finish the audit with the uncertainty recorded. If the unknown contract materially changes UI ownership, leave the affected classification inconclusive and hand the unresolved decision back to the appropriate workflow.
 
-The missing-contract finding must fit alongside the same UI capability evidence; it must not cause a second implementation plan or a speculative backend design.
+## Return a compact audit handoff
+
+Default to one compact table with exactly these columns:
+
+| UI element | Evidence | Availability | Decision | Required action | Ownership |
+|---|---|---|---|---|---|
+
+Create one row per **material capability**, not one row per DOM node, Figma layer, source file, or visual detail.
+
+### Column contract
+
+- **UI element** — short capability name meaningful to the task, such as `profile navigation`, `empty state`, `confirmation dialog`, or `save action`.
+- **Evidence** — the smallest traceable evidence that justifies the result: relevant import/call site, resolved package/export, adapter, Figma/Code Connect identity, or upstream/version evidence. Prefer concrete paths/symbols/versions when available; do not narrate the whole search.
+- **Availability** — exactly one of `AVAILABLE`, `UPSTREAM_ONLY`, `VERSION_GAP`, `ABSENT`, or `UNKNOWN` for the reusable UI capability.
+- **Decision** — exactly one primary decision: `REUSE`, `ADAPTER`, `COMPOSE`, `EXTEND_DESIGN_SYSTEM`, or `APP_SPECIFIC` when established. If missing evidence could materially change the primary decision, use `UNKNOWN` here rather than guessing and explain the verification needed.
+- **Required action** — short implementation-neutral next action. Prefer the controlled actions below instead of a detailed plan.
+- **Ownership** — name the owning layer/source concisely: existing package/component, existing app adapter, application integration layer, feature/domain layer, shared design system, or application/domain. Use a concrete package/module when that evidence is known.
+
+### Required-action vocabulary
+
+Prefer one concise action, optionally with one short qualifier:
+
+- `reuse`;
+- `add adapter`;
+- `compose locally`;
+- `extend design system`;
+- `keep app-specific`;
+- `align/upgrade dependency`;
+- `publish/consume upstream capability`;
+- `verify evidence`;
+- `resolve missing contract`.
+
+When ownership is `REUSE` but availability is `VERSION_GAP` or `UPSTREAM_ONLY`, the required action should normally be `align/upgrade dependency` or `publish/consume upstream capability`, **not** `extend design system` or local reimplementation.
+
+Do not put file-by-file implementation steps, prop designs, code snippets, migration sequences, or speculative backend contracts in `Required action`.
+
+### Optional compact sections
+
+Add a section only when at least one row needs it:
+
+- **Design-system gaps** — confirmed `EXTEND_DESIGN_SYSTEM` work or an upstream/version gap that requires a release/alignment note.
+- **Application boundaries** — material `ADAPTER`, `COMPOSE`, or `APP_SPECIFIC` ownership boundary that is not obvious from the table alone.
+- **Missing contracts** — `MISSING_CONTRACT` / contract `UNKNOWN` items, each naming the blocked interaction, the missing dependency, and the honest UI state/TODO. Never design the missing API here.
+- **Verification notes** — only unresolved evidence that could change `Availability` or `Decision`, plus the smallest next verification needed.
+
+Do not add empty sections. Do not add a general architecture narrative before or after the table.
+
+### Inconclusive output
+
+If evidence is insufficient and the missing fact could change ownership or availability:
+
+- use `UNKNOWN` for the affected field rather than a conventional guess;
+- set `Required action` to `verify evidence`;
+- state the smallest decisive check in **Verification notes**;
+- keep any classifications that are already independently established.
+
+Do not fail the entire audit because one capability is inconclusive.
 
 ## Preserve the important distinctions
 
-- **Consumer availability is not upstream existence.** Upstream source proves a capability exists somewhere, not that this consumer can use it.
+- **Consumer availability is not upstream existence.** Upstream source proves a capability exists somewhere, not that this consumer can use it now.
+- **Reuse ownership is not current availability.** `REUSE + VERSION_GAP` and `REUSE + UPSTREAM_ONLY` are valid and prevent duplicate local implementation.
 - **Declared version is not resolved version.** A manifest range does not prove the exact installed package surface.
 - **Exported capability is not repository-source existence.** A symbol present upstream or inside a package is not necessarily public to the consumer.
 - **Figma identity is not consumer availability.** A library or Code Connect match identifies intent/counterpart, not necessarily an importable current package surface.
 - **Visual similarity is not ownership.** Reuse/extension decisions require contract evidence, not appearance alone.
 - **One search miss is not absence.** Use representative evidence or `UNKNOWN`.
-- **Availability is not ownership.** A version gap does not decide whether a capability belongs to the design system or the application.
+- **Availability is not ownership.** A version gap does not decide where the capability belongs.
 - **Missing backend/action state is not UI ownership.** Keep external contracts separate.
-- **Primitive, adapter, composition, and application-specific UI are different boundaries.** Do not use wrappers or shared placement as substitutes for reasoning about those boundaries.
 - **An audit result is not an implementation plan.** Classification should constrain downstream planning, not duplicate it.
 - **Possible future reuse is not current shared ownership.** `EXTEND_DESIGN_SYSTEM` needs evidence of a generic reusable contract, not speculation.
 
 ## Use proportional depth
 
-Inspect only the material capabilities whose classification could change what gets built or where it lives.
+Inspect only material capabilities whose classification could change what gets built or where it lives.
 
 - Do not inventory an entire design system for a one-component task.
 - Do not perform broad Figma library reconciliation when one component identity is enough.
@@ -322,8 +382,6 @@ Inspect only the material capabilities whose classification could change what ge
 - Stop investigating a candidate once the evidence is sufficient for its classification.
 - Preserve `UNKNOWN` when missing evidence could change ownership or availability instead of filling the gap with a conventional default.
 - If no material reuse/ownership question remains, stop the audit and return control to planning or implementation.
-
-Consumer-first discovery is complete when each in-scope capability has enough evidence to support its current availability status and ownership classification, or an explicit `UNKNOWN` remains because the missing evidence could change the result.
 
 ## Compose with neighboring workflows
 
@@ -339,6 +397,23 @@ These neighboring workflows are optional. The audit must still produce a useful 
 
 ## Stop before implementation
 
-The audit is complete when every in-scope material capability is either classified with sufficient evidence or explicitly left `UNKNOWN`, and any material version/availability or external-contract gaps are separated from ownership.
+Stop the audit as soon as all in-scope material capabilities satisfy one of these conditions:
 
-Do not continue into file-by-file planning, code changes, Figma mutation, Code Connect authoring, package publication, backend contract design, or tracker lifecycle work. Return the established boundary to the workflow that owns those actions.
+1. `Decision` and `Availability` are established strongly enough for downstream planning; or
+2. the affected field is explicitly `UNKNOWN`, the missing evidence is named, and the smallest verification step is recorded.
+
+Also ensure any material external contract is separately marked `AVAILABLE`, `MISSING_CONTRACT`, or `UNKNOWN` when it affects the UI handoff.
+
+At that point, return the compact table plus only the optional sections that contain material findings.
+
+Do **not** continue into:
+
+- file-by-file planning;
+- component prop/API design beyond what is required to classify ownership;
+- code changes or refactors;
+- Figma mutation or Code Connect authoring;
+- package publication or dependency upgrade execution;
+- backend/route/action contract design;
+- tracker lifecycle work.
+
+If the user separately asked for implementation or planning, hand the audit result back to that workflow after the audit is complete rather than silently continuing as part of this skill.
