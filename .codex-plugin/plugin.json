@@ -1,7 +1,7 @@
 {
   "name": "ui-reuse-audit",
   "version": "0.1.0",
-  "description": "Audit UI reuse, consumer availability, and ownership before frontend implementation.",
+  "description": "Audit frontend UI reuse, consumer availability, and ownership before implementation.",
   "author": {
     "name": "Konstantin Kashapov",
     "url": "https://github.com/KashapovK"
@@ -15,13 +15,14 @@
     "design-system",
     "ui-kit",
     "reuse",
+    "figma",
     "architecture"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "UI Reuse Audit",
     "shortDescription": "Audit UI reuse and ownership before implementation.",
-    "longDescription": "Inspect the current consumer, shared UI sources, adapters, and versioned dependencies before frontend implementation to determine what should be reused, composed, adapted, extended upstream, or kept application-specific.",
+    "longDescription": "Inspect the current consumer, shared UI sources, adapters, Figma mappings, and versioned dependencies before frontend implementation. Classify each material UI capability as reuse, adapter, composition, design-system extension, or application-specific while keeping availability and missing external contracts separate.",
     "developerName": "Konstantin Kashapov",
     "category": "Productivity",
     "capabilities": [
@@ -30,8 +31,8 @@
     "websiteURL": "https://github.com/KashapovK/ui-reuse-audit",
     "defaultPrompt": [
       "Audit this UI task for reuse and ownership before implementation.",
-      "Check which existing design-system or shared UI capabilities this consumer can actually use.",
-      "Classify the material UI parts before I write the implementation plan."
+      "Verify what the current consumer can actually use before relying on upstream design-system capability.",
+      "Classify material UI capabilities and separate version gaps or missing routes, APIs, and actions from ownership."
     ]
   }
 }
