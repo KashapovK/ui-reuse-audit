@@ -75,19 +75,123 @@ An adapter that already exists and satisfies the required integration is `REUSE`
 
 Do not create an adapter to preserve a preferred local API, reduce import length, apply incidental styling, or wrap one consumer call site. Those are not sufficient ownership boundaries.
 
+## Discover consumer reality before upstream possibility
+
+Run discovery from the consuming application outward. The default evidence order is:
+
+`consumer imports and call sites → manifest/workspace declarations → lockfile or resolved metadata → installed/workspace package exports and source → upstream design-system repository`
+
+This order is a priority, not a requirement to inspect every layer. Stop as soon as the material claim is established strongly enough for the audit.
+
+### 1. Start from the requested UI and current consumer usage
+
+Identify only the material capabilities that could change what gets built or where it belongs. For each one, search the consumer first for:
+
+- direct imports from the design-system/UI package;
+- imports through local shared UI or adapter modules;
+- existing call sites of likely reusable components, tokens, icons, or patterns;
+- analogous feature implementations that may reveal an existing composition or application boundary.
+
+Treat analogous feature code as evidence of current practice, not automatic proof of reusable ownership. A repeated application-local pattern can still be `COMPOSE` or `APP_SPECIFIC` rather than a design-system primitive.
+
+Do not broaden the search into a full component inventory unless the task itself spans that surface.
+
+### 2. Establish declared and resolved dependency state
+
+When an external/workspace UI package may own the capability, identify the relevant consumer package boundary and record separately:
+
+- the **declared constraint** from the manifest or workspace configuration;
+- the **resolved version or workspace target** from the lockfile or authoritative package-manager metadata, when available;
+- whether the dependency is external, workspace-linked, vendored, generated, or otherwise resolved through a nonstandard path.
+
+Never call a semver range an exact installed version. If a lockfile or workspace link establishes the exact resolved state, prefer that for current-availability claims.
+
+If several workspaces consume different versions or package surfaces, scope the audit to the actual consumer being changed instead of treating one manifest as repository-wide truth.
+
+### 3. Verify the usable package surface
+
+When availability is still material, inspect the resolved installed/workspace package or its authoritative exports/source to determine whether the consumer can actually use the capability.
+
+Prefer evidence such as:
+
+- package `exports` / entry points;
+- generated or published type declarations;
+- public barrel files;
+- installed package source when that is the shipped surface;
+- workspace package source at the exact linked revision/state.
+
+A symbol appearing somewhere in repository source does not prove it is part of the public consumer surface. Conversely, absence from one barrel file does not prove absence if the package intentionally exposes secondary entry points.
+
+Do not require network access when the local resolved package state already establishes the answer.
+
+### 4. Inspect local reusable layers before declaring a gap
+
+Before deciding that a shared capability is missing, check the relevant local reusable surfaces, proportionally:
+
+- application adapters around the design-system primitive;
+- shared UI wrappers that encode a real integration boundary;
+- shared tokens/icons/assets;
+- established feature-level compositions when the task appears domain-specific.
+
+If an adapter already satisfies the integration, classify it as `REUSE`. Do not recommend a second wrapper merely because the upstream primitive is lower-level.
+
+A local application component should not be promoted to design-system ownership solely because it is reused in more than one feature. Verify whether its contract is actually application-independent before considering `EXTEND_DESIGN_SYSTEM`.
+
+### 5. Consult upstream only after consumer state is known
+
+Use the upstream design-system repository, latest branch, package registry metadata, release notes, or another authoritative upstream source only when it answers a material question that consumer evidence cannot resolve, such as:
+
+- whether a missing capability already exists upstream but is not in the consumer's resolved version;
+- whether a consumer package is behind a release that introduced the needed public export;
+- whether an apparent local gap is intentionally planned upstream.
+
+Keep upstream state separate from consumer state. A component on upstream `main` or an unreleased branch is not directly reusable by a consumer that cannot import it.
+
+When upstream evidence shows the capability exists beyond the consumer's current usable surface, classify availability as `UPSTREAM_ONLY` or `VERSION_GAP` as appropriate; do not silently convert the ownership decision into `REUSE` unless the consumer can actually use the capability now.
+
+## Prove absence proportionally
+
+A failed search is not proof that a capability is absent.
+
+Before assigning `ABSENT`, inspect a representative set of the surfaces that would reasonably contain the capability, for example:
+
+- likely package exports and secondary entry points;
+- local shared UI/adapter directories;
+- relevant tokens/icons/assets indexes;
+- representative analogous implementations;
+- the resolved package surface if an external UI package is involved.
+
+Use the smallest representative search that makes the absence claim credible for this task. Do not scan unrelated packages or the entire repository merely to strengthen a low-risk claim.
+
+If access limitations, package-manager state, generated artifacts, or ambiguous exports prevent a reliable conclusion, use `UNKNOWN` instead of `ABSENT`.
+
 ## Keep availability orthogonal to ownership
 
 Ownership answers **where the capability belongs**. Availability answers **whether the current consumer can use the relevant capability now**. Do not collapse the two.
 
-Use a compact availability status such as:
+Use these availability statuses:
 
-- `AVAILABLE` — evidence shows the current consumer can use the capability;
-- `UPSTREAM_ONLY` — the capability exists in an upstream source but is not part of the consumer's current usable surface;
-- `VERSION_GAP` — the capability belongs to the dependency/design system but the consumer is on a version/channel that does not expose it;
+- `AVAILABLE` — evidence shows the current consumer can use the capability through a supported local or dependency surface now;
+- `UPSTREAM_ONLY` — the capability exists in an upstream source but is not part of the consumer's current usable surface and no specific consumer-version delta is established;
+- `VERSION_GAP` — the capability belongs to the dependency/design system and evidence establishes that a different released/resolved version or channel exposes it while the current consumer does not;
 - `ABSENT` — representative evidence supports that the capability is not present in the relevant reusable surfaces;
 - `UNKNOWN` — available evidence is insufficient to establish one of the above confidently.
 
 A capability can therefore be, for example, `EXTEND_DESIGN_SYSTEM + ABSENT`, or `REUSE + AVAILABLE`. A component that exists only on design-system `main` is not `REUSE + AVAILABLE` for a consumer that cannot import it.
+
+Use `VERSION_GAP` only when the version relationship itself is established. If the capability merely appears in an unreleased or otherwise unversioned upstream state, prefer `UPSTREAM_ONLY`.
+
+## Keep evidence compact and claim-specific
+
+For each material capability, retain only the evidence needed to support the ownership and availability classification. Useful evidence usually answers:
+
+- where the consumer currently imports or would import from;
+- what version/workspace state is actually resolved;
+- whether the required symbol/API is exported and usable;
+- whether an existing adapter/composition already owns the integration;
+- what upstream evidence, if any, explains a gap.
+
+Do not turn discovery into a repository inventory, dependency audit, or design-system catalog. The final output should be able to cite the decisive evidence without reproducing every search performed.
 
 ## Keep external contracts orthogonal to UI ownership
 
@@ -104,6 +208,9 @@ Never invent a missing contract to make the UI appear complete. The UI ownership
 ## Preserve the important distinctions
 
 - **Consumer availability is not upstream existence.** Upstream source proves a capability exists somewhere, not that this consumer can use it.
+- **Declared version is not resolved version.** A manifest range does not prove the exact installed package surface.
+- **Exported capability is not repository-source existence.** A symbol present upstream or inside a package is not necessarily public to the consumer.
+- **One search miss is not absence.** Use representative evidence or `UNKNOWN`.
 - **Availability is not ownership.** A version gap does not decide whether a capability belongs to the design system or the application.
 - **Missing backend/action state is not UI ownership.** Keep external contracts separate.
 - **Primitive, adapter, composition, and application-specific UI are different boundaries.** Do not use wrappers or shared placement as substitutes for reasoning about those boundaries.
@@ -120,7 +227,7 @@ Inspect only the material capabilities whose classification could change what ge
 - Preserve `UNKNOWN` when missing evidence could change ownership or availability instead of filling the gap with a conventional default.
 - If no material reuse/ownership question remains, stop the audit and return control to planning or implementation.
 
-Detailed consumer-first discovery order, exact evidence checks, and absence-proof requirements are defined by the dedicated discovery workflow. This section defines only the behavioral boundary that workflow must preserve.
+Consumer-first discovery is complete when each in-scope capability has enough evidence to support its current availability status and ownership classification, or an explicit `UNKNOWN` remains because the missing evidence could change the result.
 
 ## Compose with neighboring workflows
 
