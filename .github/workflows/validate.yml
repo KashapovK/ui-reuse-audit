@@ -1,0 +1,122 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Agent Skills reference validator
+        run: >-
+          python3 -m pip install
+          "skills-ref @ git+https://github.com/agentskills/agentskills.git@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref"
+
+      - name: Validate skill
+        run: skills-ref validate ./skills/ui-reuse-audit
+
+      - name: Validate plugin manifest
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          manifest_path = Path(".codex-plugin/plugin.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+          required = {"name", "version", "description", "author", "skills", "interface"}
+          missing = sorted(required - manifest.keys())
+          if missing:
+              raise SystemExit(f"Missing required manifest fields: {', '.join(missing)}")
+
+          if manifest["name"] != "ui-reuse-audit":
+              raise SystemExit("Manifest name must be ui-reuse-audit")
+          if not re.fullmatch(
+              r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)",
+              manifest["version"],
+          ):
+              raise SystemExit("Manifest version must use strict semver")
+          if not isinstance(manifest["author"], dict) or not manifest["author"].get("name"):
+              raise SystemExit("Manifest author.name is required")
+
+          skills_path = Path(manifest["skills"])
+          if manifest["skills"] != "./skills/" or not skills_path.is_dir():
+              raise SystemExit("Manifest skills must point to the existing ./skills/ directory")
+
+          interface_required = {
+              "displayName",
+              "shortDescription",
+              "longDescription",
+              "developerName",
+              "category",
+              "capabilities",
+          }
+          interface = manifest["interface"]
+          if not isinstance(interface, dict):
+              raise SystemExit("Manifest interface must be an object")
+          interface_missing = sorted(interface_required - interface.keys())
+          if interface_missing:
+              raise SystemExit(
+                  f"Missing required interface fields: {', '.join(interface_missing)}"
+              )
+
+          forbidden = {"apps", "hooks", "mcpServers"} & manifest.keys()
+          if forbidden:
+              raise SystemExit(
+                  f"Skills-only manifest must omit: {', '.join(sorted(forbidden))}"
+              )
+          PY
+
+      - name: Check release version consistency
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          skill = Path("skills/ui-reuse-audit/SKILL.md").read_text(encoding="utf-8")
+          match = re.search(r'^  version: "([^"]+)"$', skill, flags=re.MULTILINE)
+          if match is None:
+              raise SystemExit("Skill metadata.version is missing or malformed")
+
+          manifest = json.loads(
+              Path(".codex-plugin/plugin.json").read_text(encoding="utf-8")
+          )
+          if match.group(1) != manifest["version"]:
+              raise SystemExit(
+                  "Release versions differ: "
+                  f"skill={match.group(1)} manifest={manifest['version']}"
+              )
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          heading = re.compile(
+              rf"^## {re.escape(manifest['version'])} - \d{{4}}-\d{{2}}-\d{{2}}$",
+              flags=re.MULTILINE,
+          )
+          if heading.search(changelog) is None:
+              raise SystemExit(
+                  f"CHANGELOG.md is missing a dated {manifest['version']} release heading"
+              )
+          PY
+
+      - name: Check whitespace errors
+        run: git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
