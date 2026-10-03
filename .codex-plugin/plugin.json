@@ -1,0 +1,37 @@
+{
+  "name": "ui-reuse-audit",
+  "version": "0.1.0",
+  "description": "Audit UI reuse, consumer availability, and ownership before frontend implementation.",
+  "author": {
+    "name": "Konstantin Kashapov",
+    "url": "https://github.com/KashapovK"
+  },
+  "homepage": "https://github.com/KashapovK/ui-reuse-audit#readme",
+  "repository": "https://github.com/KashapovK/ui-reuse-audit",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "frontend",
+    "design-system",
+    "ui-kit",
+    "reuse",
+    "architecture"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "UI Reuse Audit",
+    "shortDescription": "Audit UI reuse and ownership before implementation.",
+    "longDescription": "Inspect the current consumer, shared UI sources, adapters, and versioned dependencies before frontend implementation to determine what should be reused, composed, adapted, extended upstream, or kept application-specific.",
+    "developerName": "Konstantin Kashapov",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://github.com/KashapovK/ui-reuse-audit",
+    "defaultPrompt": [
+      "Audit this UI task for reuse and ownership before implementation.",
+      "Check which existing design-system or shared UI capabilities this consumer can actually use.",
+      "Classify the material UI parts before I write the implementation plan."
+    ]
+  }
+}
